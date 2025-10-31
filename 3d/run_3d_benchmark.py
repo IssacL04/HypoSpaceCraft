@@ -11,6 +11,7 @@ from typing import List, Dict, Set, Tuple, Optional, Any
 from datetime import datetime
 from scipy import stats
 import traceback
+from optimize import *
 
 # Add parent directory to path if needed
 sys.path.append(str(Path(__file__).parent))
@@ -515,7 +516,8 @@ class Benchmark3D:
         observation_set: Dict,
         n_queries: int = 10,
         verbose: bool = True,
-        max_retries: int = 3
+        max_retries: int = 3,
+        optimization: int = 0
     ) -> Dict:
         """Evaluate LLM on a single observation set with enhanced tracking."""
         
@@ -553,6 +555,10 @@ class Benchmark3D:
         unique_structures = []
         parse_success_count = 0
         prior_structures = []  # Track structures to pass as history
+        feedback_history = []
+        valid_flag = True
+        novel_flag = True
+        error_msg = ""
         
         # Token and cost tracking
         total_prompt_tokens = 0
@@ -563,11 +569,42 @@ class Benchmark3D:
         # Error tracking
         errors = []
         error_counts = {}
+
+        # optimization
+        cot_on, temp_on, feedback_on = map(bool, (
+            (optimization >> 2) & 1,
+            (optimization >> 1) & 1,
+            (optimization >> 0) & 1,
+        ))
+
+        enabled = []
+        if cot_on:
+            enabled.append("COT optimization")
+        if temp_on:
+            enabled.append("temperature optimization")
+        if feedback_on:
+            enabled.append("feedback optimization")
+
+        if enabled:
+            print(f"  Now {', '.join(enabled)} {'are' if len(enabled) > 1 else 'is'} enabled.")
+        else:
+            print("  No optimization is enabled.")
         
         for i in range(n_queries):
             # Pass prior unique structures as history to avoid repetition
             prompt = self.create_prompt(observations, prior_structures=unique_structures)
-            
+            # add cot optimization
+            if cot_on:
+                prompt += cot_tips()
+
+            # add temperature optimization
+            if temp_on:
+                llm.temperature = stage_temp(i, n_queries)
+
+            # add feedback optimization
+            if feedback_on:
+                prompt += feedback_prompt(feedback_history)
+
             # Try to get a valid response with retries
             structure = None
             query_error = None
@@ -636,6 +673,16 @@ class Benchmark3D:
                 # Check if it's valid (matches observations)
                 if self.validate_structure_matches_observations(structure, observations):
                     valid_hypotheses.append(structure)
+
+                novel_flag = True if s_hash not in unique_hashes else False
+                valid_flag = True if self.validate_structure_matches_observations(structure, observations) else False
+
+            error_msg = "Some upper-layer blocks lack support below" if not valid_flag else ""
+            feedback_history.append({
+                "is_valid": valid_flag,
+                "is_novel": novel_flag,
+                "error_msg": error_msg
+            })
         
         # Calculate metrics
         parse_success_rate = parse_success_count / n_queries if n_queries > 0 else 0
@@ -694,7 +741,8 @@ class Benchmark3D:
         verbose: bool = True,
         checkpoint_dir: str = "checkpoints",
         run_id: Optional[str] = None,
-        max_retries: int = 3
+        max_retries: int = 3,
+        opt: int = 0
     ) -> Dict:
         """Run enhanced benchmark with comprehensive tracking.
         
@@ -815,7 +863,7 @@ class Benchmark3D:
                 
                 # Evaluate
                 result = self.evaluate_single_observation_set(
-                    llm, obs_set, n_queries, verbose=False, max_retries=max_retries
+                    llm, obs_set, n_queries, verbose=False, max_retries=max_retries, optimization=opt
                 )
                 
                 all_results.append(result)
@@ -1056,6 +1104,7 @@ def main():
     parser.add_argument("--output", type=str, default=None, help="Output file path")
     parser.add_argument("--verbose", action="store_true", default=True, help="Verbose output")
     parser.add_argument("--quiet", action="store_true", help="Disable verbose output")
+    parser.add_argument("--optimize", type=int, default=0, metavar='0-7', help="3-bit binary flag: [cot][temp][feedback] (default 0 = 0b000 = all off)")
     
     args = parser.parse_args()
     
@@ -1142,7 +1191,8 @@ def main():
         verbose=verbose,
         checkpoint_dir=checkpoint_dir,
         run_id=run_id,
-        max_retries=args.max_retries
+        max_retries=args.max_retries,
+        opt = args.optimize
     )
     
     # Save results
