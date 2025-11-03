@@ -1,3 +1,4 @@
+# -*- coding: gbk -*-
 import sys
 import json
 import argparse
@@ -24,7 +25,8 @@ class CausalBenchmarkEnhanced:
     
     def __init__(self, complete_dataset_path: Optional[str] = None, 
                  n_observations_filter: Optional[List[int]] = None,
-                 gt_filter: Optional[Tuple] = None):
+                 gt_filter: Optional[Tuple] = None,
+                 use_cot: bool = False):
         """
         Initialize benchmark with a complete dataset or empty.
         
@@ -32,22 +34,23 @@ class CausalBenchmarkEnhanced:
             complete_dataset_path: Path to the complete causal dataset JSON file (optional)
             n_observations_filter: List of n_observations values to include (optional)
             gt_filter: Tuple of (min, max) for GT range or (list, None) for specific values (optional)
+            use_cot: Whether to use Chain-of-Thought prompting (default: False)
         """
         self.n_observations_filter = n_observations_filter
         self.gt_filter = gt_filter
         self.filtered_observation_sets = []
         self.excluded_observation_sets = []  # For potential backfill
+        self.use_cot = use_cot  # CoT mode flag
         
         if complete_dataset_path:
             with open(complete_dataset_path, 'r') as f:
                 self.complete_dataset = json.load(f)
             
-            # Extract metadata
             self.metadata = self.complete_dataset.get('metadata', {})
             self.nodes = self.metadata.get('nodes', [])
             self.max_edges = self.metadata.get('max_edges', None)
             
-            # Flatten all datasets into a single list for sampling
+
             self.all_observation_sets = []
             if 'datasets_by_n_observations' in self.complete_dataset:
                 for n_obs, datasets in self.complete_dataset['datasets_by_n_observations'].items():
@@ -57,35 +60,32 @@ class CausalBenchmarkEnhanced:
             elif 'sampled_datasets' in self.complete_dataset:
                 self.all_observation_sets = self.complete_dataset['sampled_datasets']
             
-            # Apply two-stage filtering
+
             stage1_filtered = self.all_observation_sets
             
-            # Stage 1: Apply n_observations filter if specified
             if n_observations_filter:
                 stage1_filtered = [
                     obs_set for obs_set in self.all_observation_sets
                     if obs_set.get('n_observations') in n_observations_filter
                 ]
                 print(f"Stage 1: Filtered to {len(stage1_filtered)} observation sets with n_observations in {n_observations_filter}")
-            
-            # Stage 2: Apply GT filter if specified
+
             if gt_filter:
-                if gt_filter[1] is not None:  # Range filter (min, max)
+                if gt_filter[1] is not None:  
                     min_gt, max_gt = gt_filter
                     self.filtered_observation_sets = [
                         obs_set for obs_set in stage1_filtered
                         if min_gt <= obs_set.get('n_compatible_graphs', 0) <= max_gt
                     ]
                     print(f"Stage 2: Filtered to {len(self.filtered_observation_sets)} observation sets with n_compatible_graphs in [{min_gt}, {max_gt}]")
-                else:  # Specific values filter
+                else: 
                     allowed_values = gt_filter[0] if isinstance(gt_filter[0], list) else []
                     self.filtered_observation_sets = [
                         obs_set for obs_set in stage1_filtered
                         if obs_set.get('n_compatible_graphs', 0) in allowed_values
                     ]
                     print(f"Stage 2: Filtered to {len(self.filtered_observation_sets)} observation sets with n_compatible_graphs in {allowed_values}")
-                
-                # Keep excluded sets for potential backfill
+
                 self.excluded_observation_sets = [
                     obs_set for obs_set in self.all_observation_sets
                     if obs_set not in self.filtered_observation_sets
@@ -93,8 +93,7 @@ class CausalBenchmarkEnhanced:
             else:
                 self.filtered_observation_sets = stage1_filtered
                 self.excluded_observation_sets = []
-            
-            # Infer max_edges from ground truth graphs if not specified
+ 
             if self.max_edges is None and self.all_observation_sets:
                 max_edges_in_gts = 0
                 for obs_set in self.all_observation_sets:
@@ -133,8 +132,7 @@ class CausalBenchmarkEnhanced:
         if seed is not None:
             random.seed(seed)
             np.random.seed(seed)
-        
-        # Determine primary pool based on filters
+
         if self.n_observations_filter or self.gt_filter:
             primary_pool = self.filtered_observation_sets
             backup_pool = self.excluded_observation_sets
@@ -143,19 +141,16 @@ class CausalBenchmarkEnhanced:
             backup_pool = []
         
         sampled = []
-        
-        # First, sample from primary pool (datasets meeting filter criteria)
+
         n_primary = len(primary_pool)
         if n_primary > 0:
             n_from_primary = min(n_samples, n_primary)
             sampled_primary = random.sample(primary_pool, n_from_primary)
             sampled.extend(sampled_primary)
-            
-            # Mark these as meeting filter criteria
+
             for obs_set in sampled_primary:
                 obs_set['meets_filter_criteria'] = True
-        
-        # If we need more samples, backfill from backup pool
+
         n_still_needed = n_samples - len(sampled)
         if n_still_needed > 0 and backup_pool:
             n_backup = len(backup_pool)
@@ -166,15 +161,13 @@ class CausalBenchmarkEnhanced:
                 print(f"  Adding {n_from_backup} randomly selected datasets from outside the filter range.")
                 
                 sampled_backup = random.sample(backup_pool, n_from_backup)
-                
-                # Mark these as backfilled
+
                 for obs_set in sampled_backup:
                     obs_set['meets_filter_criteria'] = False
                     obs_set['backfilled'] = True
                 
                 sampled.extend(sampled_backup)
-        
-        # Final check if we still don't have enough
+
         if len(sampled) < n_samples:
             total_available = len(primary_pool) + len(backup_pool)
             print(f"\nWarning: Requested {n_samples} samples but only {total_available} total datasets available.")
@@ -235,34 +228,150 @@ class CausalBenchmarkEnhanced:
         """
         return dedent(prompt).strip()
     
+    def create_prompt_with_cot(self, observations: List[Dict], prior_hypotheses: List[CausalGraph]) -> str:
+        """Create Chain-of-Thought prompt for LLM to encourage step-by-step reasoning."""
+        nodes_str = ", ".join(self.nodes)
+        obs_block = "\n".join(obs["string"] for obs in observations)
+        
+        if prior_hypotheses:
+            prior_lines = []
+            for h in prior_hypotheses:
+                edges = [f"{s}->{d}" for s, d in h.edges]
+                if edges:
+                    prior_lines.append("Graph: " + ", ".join(edges))
+                else:
+                    prior_lines.append("Graph: No edges")
+            prior_block = "\n".join(prior_lines)
+            
+            # Add stronger diversity emphasis when many priors exist
+            n_priors = len(prior_hypotheses)
+            if n_priors >= 4:
+                diversity_emphasis = "\n\nIMPORTANT: You have tried many graphs already. PRIORITIZE finding a DIFFERENT valid solution!"
+            elif n_priors >= 2:
+                diversity_emphasis = "\n\nNote: Try to find a different valid graph from the ones above."
+            else:
+                diversity_emphasis = ""
+        else:
+            prior_block = "None"
+            diversity_emphasis = ""
+        
+        # Add constraint information if max_edges is known
+        constraint_info = ""
+        if self.max_edges is not None:
+            constraint_info = f"\nConstraint: The graph should have at most {self.max_edges} edges."
+        
+        prompt = f"""
+        You are given observations from perturbation experiments on a causal system.
+        
+        PERTURBATION SEMANTICS (CRITICAL - Read carefully):
+        
+        When we "Perturb X", the result shows:
+        1. X = 0 (the perturbed node is always 0)
+        2. Y = 1 if there exists a directed path FROM X TO Y in the graph
+        3. Y = 0 if there is NO path from X to Y
+        
+        Key insight: Paths are TRANSITIVE!
+        - If graph has X->Y->Z, then perturbing X affects both Y and Z
+        
+        EXAMPLE (learn from this):
+        
+        Nodes: A, B, C
+        Observations:
+        - Perturb A -> A=0, B=1, C=1
+        - Perturb B -> A=0, B=0, C=1  
+        - Perturb C -> A=0, B=0, C=0
+        
+        Step-by-step reasoning:
+        1. Valid edges: Obs 1 shows A reaches B and C. Obs 2 shows B reaches C. Obs 3 shows C reaches nothing.
+        2. Invalid edges: No node reaches A (A=0 in all). B doesn't reach A. C doesn't reach A or B.
+        3. Candidate: A->B, B->C (this creates transitive path A->B->C)
+        4. Verify: 
+           - Perturb A: A=0, B=1 (via A->B), C=1 (via A->B->C) ? Matches obs 1
+           - Perturb B: A=0, B=0, C=1 (via B->C) ? Matches obs 2
+           - Perturb C: A=0, B=0, C=0 ? Matches obs 3
+        5. Diversity: (no priors in this example)
+        
+        FINAL ANSWER: Graph: A->B, B->C
+        
+        Now solve YOUR problem:
+        
+        Nodes: {nodes_str}{constraint_info}
+        
+        Observations:
+        {obs_block}
+        
+        Prior predictions (avoid these exact edge sets):
+        {prior_block}{diversity_emphasis}
+        
+        Task:
+        Think step-by-step to find a directed acyclic graph (DAG) that explains all observations.
+        
+        REASONING STEPS (be concise, 3-5 sentences):
+        1. Identify valid edges: For each observation, which edges are required/possible?
+        
+        2. Eliminate invalid edges: Which edges are ruled out by observations?
+        
+        3. Generate candidate graph: Construct a graph that explains all observations.
+        
+        4. VERIFY CORRECTNESS (CRITICAL):
+           - Test your graph against EACH observation
+           - Ensure perturbing each node produces the correct downstream effects
+           - If ANY observation fails, revise your graph
+        
+        5. Diversity check (IMPORTANT when priors exist):
+           - Compare your graph's edges with ALL prior predictions above
+           - If your graph matches any prior, actively seek an alternative valid graph
+           - Apply diversity strategies: minimize edges / add optional edges / try different edge combinations
+           - Ensure your final graph has a DIFFERENT edge set from all priors
+        
+        CRITICAL: After your brief reasoning, you MUST end with exactly this format on the LAST line:
+        
+        FINAL ANSWER: Graph: A->B, B->C
+        
+        Or if no edges:
+        
+        FINAL ANSWER: Graph: No edges
+        
+        Rules (in priority order):
+        1. MANDATORY: The graph MUST correctly explain ALL observations (test each one!)
+        2. MANDATORY: Use only the listed nodes, no self-loops, no cycles (must be a DAG)
+        3. MANDATORY: The very last line MUST start with "FINAL ANSWER: Graph:"
+        4. STRONGLY PREFERRED: Find a graph with DIFFERENT edges from all prior predictions
+        
+        Remember: Correctness is mandatory, but diversity is highly valued!
+        """
+        return dedent(prompt).strip()
+    
     def parse_llm_response(self, response: str) -> Optional[CausalGraph]:
         """Parse LLM response to extract causal graph."""
         if not isinstance(response, str):
             return None
-        
-        # Strip code fences and whitespace
+
         s = response.replace("```", "").strip()
+
+        final_answer_match = re.search(r'(?i)FINAL\s+ANSWER\s*:\s*Graph\s*:\s*(.+)$', s, flags=re.MULTILINE)
+        if final_answer_match:
+            line = final_answer_match.group(1).strip()
+        else:
+            all_graph_matches = list(re.finditer(r'(?i)\bgraph\s*:\s*(.+)$', s, flags=re.MULTILINE))
+            if all_graph_matches:
+                line = all_graph_matches[-1].group(1).strip()
+            else:
+                line = s.splitlines()[0].strip() if s.splitlines() else ""
         
-        # Look for "Graph:" line
-        m = re.search(r'(?i)\bgraph\s*:\s*(.+)$', s, flags=re.MULTILINE)
-        line = m.group(1).strip() if m else (s.splitlines()[0].strip() if s.splitlines() else "")
         if not line:
             return None
-        
-        # Clean up the line
+
         if (line.startswith('"') and line.endswith('"')) or (line.startswith("'") and line.endswith("'")):
             line = line[1:-1].strip()
         line = (line
-                .replace("→", "->")
                 .replace("-->", "->")
                 .replace("=>", "->")
                 .rstrip(" .;"))
-        
-        # Handle "No edges"
+
         if re.search(r'\b(no\s+edges?|empty|none|null)\b', line, re.I):
             return CausalGraph(nodes=self.nodes, edges=[])
-        
-        # Parse edges
+
         parts = [p.strip() for p in line.split(",") if p.strip()]
         if not parts:
             return None
@@ -276,11 +385,9 @@ class CausalBenchmarkEnhanced:
             if u not in self.nodes or v not in self.nodes or u == v:
                 return None
             edges.append((u, v))
-        
-        # Deduplicate
+
         edges = list(dict.fromkeys(edges))
-        
-        # Check max_edges constraint if specified
+ 
         if self.max_edges is not None and len(edges) > self.max_edges:
             return None  # Too many edges
         
@@ -298,11 +405,9 @@ class CausalBenchmarkEnhanced:
         for obs_dict in observations:
             perturbed_node = obs_dict['perturbed_node']
             expected_effects = obs_dict['effects']
-            
-            # Get what this hypothesis would produce
+
             hypothesis_obs = CausalDatasetGenerator.get_perturbation_effects(hypothesis, perturbed_node)
-            
-            # Check if effects match
+
             if hypothesis_obs.effects != expected_effects:
                 return False
         
@@ -343,6 +448,28 @@ class CausalBenchmarkEnhanced:
                 return f"http_error_{match.group(1)}"
             return "unknown_error"
     
+    def generate_validation_feedback(self, hypothesis: CausalGraph, observations: List[Dict]) -> str:
+        """Generate feedback message for invalid hypothesis."""
+        failed_obs = []
+        for i, obs_dict in enumerate(observations):
+            perturbed_node = obs_dict['perturbed_node']
+            expected_effects = obs_dict['effects']
+
+            hypothesis_obs = CausalDatasetGenerator.get_perturbation_effects(hypothesis, perturbed_node)
+
+            if hypothesis_obs.effects != expected_effects:
+                expected_str = obs_dict['string']
+                actual_effects_dict = {node: (1 if node in hypothesis_obs.effects else 0) 
+                                      for node in self.nodes}
+                actual_str = f"Perturb {perturbed_node} -> " + ", ".join(
+                    f"{node}={actual_effects_dict[node]}" for node in self.nodes
+                )
+                failed_obs.append(f"Observation {i+1} failed: Expected '{expected_str}' but your graph produces '{actual_str}'")
+        
+        if failed_obs:
+            return "\n".join(failed_obs)
+        return ""
+    
     def evaluate_single_observation_set(
         self,
         llm: LLMInterface,
@@ -357,116 +484,157 @@ class CausalBenchmarkEnhanced:
         Returns:
             Dictionary with evaluation results including token usage and costs
         """
-        # Extract observations and ground truths
         observations = observation_set['observations']
         ground_truth_graphs = [
             CausalGraph.from_dict(g) for g in observation_set['ground_truth_graphs']
         ]
         
-        # Get GT hashes for checking recovery
         gt_hashes = {g.get_hash() for g in ground_truth_graphs}
-        
-        # Track results
+
         all_hypotheses = []
         valid_hypotheses = []
         unique_hashes = set()
         unique_valid_graphs = []
         all_unique_hashes = set()
         unique_all_graphs = []
-        parse_success_count = 0
+        query_parse_results = [] 
         
-        # Token and cost tracking
         total_prompt_tokens = 0
         total_completion_tokens = 0
         total_tokens = 0
         total_cost = 0.0
-        
-        # Error tracking
         errors = []
         error_counts = {}
         
+        total_validation_retries = 0
+        
+        original_temp = llm.temperature if hasattr(llm, 'temperature') else 0.7
+        
         for i in range(n_queries):
-            prompt = self.create_prompt(observations, all_hypotheses)
+            # Dynamic temperature strategy for CoT mode
+            # Balanced strategy: ensure accuracy first, then ramp up diversity
+            if self.use_cot and hasattr(llm, 'temperature'):
+                # Optimized temperature curve for accuracy + diversity balance
+                # First 40%: keep original temp (accuracy focus)
+                # Middle 30%: increase by 50% (transition)
+                # Last 30%: increase by 100% (diversity boost)
+                progress = i / n_queries
+                if progress < 0.4:
+                    llm.temperature = original_temp
+                elif progress < 0.7:
+                    llm.temperature = min(original_temp * 1.5, 1.0)
+                else:
+                    llm.temperature = min(original_temp * 2.0, 1.0)
             
-            # Try to get a valid response
+            base_prompt = self.create_prompt_with_cot(observations, all_hypotheses) if self.use_cot else self.create_prompt(observations, all_hypotheses)
+            
             hypothesis = None
             query_error = None
+            validation_attempts = 0
+            max_validation_retries = 2  
+            query_had_any_parse_success = False 
             
-            for attempt in range(max_retries):
-                try:
-                    # Use query_with_usage if available
-                    if hasattr(llm, 'query_with_usage'):
-                        result = llm.query_with_usage(prompt)
-                        response = result['response']
-                        
-                        # Track usage
-                        usage = result.get('usage', {})
-                        total_prompt_tokens += usage.get('prompt_tokens', 0)
-                        total_completion_tokens += usage.get('completion_tokens', 0)
-                        total_tokens += usage.get('total_tokens', 0)
-                        total_cost += result.get('cost', 0.0)
-                    else:
-                        response = llm.query(prompt)
+            for validation_round in range(max_validation_retries + 1):
+                if validation_round > 0 and self.use_cot:
+                    feedback_prompt = base_prompt + f"""
                     
-                    # Check if response is an error
-                    if response and response.startswith("Error querying"):
+                    FEEDBACK ON YOUR PREVIOUS ATTEMPT:
+                    Your previous graph was INCORRECT. Here's what went wrong:
+                    {validation_feedback}
+                    
+                    Please revise your reasoning and provide a CORRECT graph that explains ALL observations.
+                    Remember to carefully verify each observation against your graph before outputting.
+                    
+                    FINAL ANSWER: Graph: [your corrected answer]
+                    """
+                    prompt = dedent(feedback_prompt).strip()
+                else:
+                    prompt = base_prompt
+                
+                for attempt in range(max_retries):
+                    try:
+                        if hasattr(llm, 'query_with_usage'):
+                            result = llm.query_with_usage(prompt)
+                            response = result['response']
+                            
+                            usage = result.get('usage', {})
+                            total_prompt_tokens += usage.get('prompt_tokens', 0)
+                            total_completion_tokens += usage.get('completion_tokens', 0)
+                            total_tokens += usage.get('total_tokens', 0)
+                            total_cost += result.get('cost', 0.0)
+                        else:
+                            response = llm.query(prompt)
+                        
+                        if response and response.startswith("Error querying"):
+                            query_error = {
+                                'query_index': i,
+                                'attempt': attempt + 1,
+                                'error_message': response,
+                                'error_type': self._classify_error(response)
+                            }
+                            error_type = query_error['error_type']
+                            error_counts[error_type] = error_counts.get(error_type, 0) + 1
+                            continue
+                        
+                        hypothesis = self.parse_llm_response(response)
+                        if hypothesis:
+                            query_had_any_parse_success = True
+                            break
+                            
+                    except Exception as e:
                         query_error = {
                             'query_index': i,
                             'attempt': attempt + 1,
-                            'error_message': response,
-                            'error_type': self._classify_error(response)
+                            'error_message': str(e),
+                            'error_type': self._classify_error(str(e))
                         }
-                        error_type = query_error['error_type']
-                        error_counts[error_type] = error_counts.get(error_type, 0) + 1
-                        continue
+                        if verbose:
+                            print(f"  Exception on query {i + 1}: {str(e)[:100]}")
+                
+                if hypothesis:
+                    is_valid = self.validate_hypothesis(hypothesis, observations)
                     
-                    # Parse response
-                    hypothesis = self.parse_llm_response(response)
-                    if hypothesis:
-                        parse_success_count += 1
+                    if is_valid:
                         break
-                        
-                except Exception as e:
-                    query_error = {
-                        'query_index': i,
-                        'attempt': attempt + 1,
-                        'error_message': str(e),
-                        'error_type': self._classify_error(str(e))
-                    }
-                    if verbose:
-                        print(f"  ⚠ Exception on query {i + 1}: {str(e)[:100]}")
+                    elif self.use_cot and validation_round < max_validation_retries:
+                        validation_feedback = self.generate_validation_feedback(hypothesis, observations)
+                        validation_attempts += 1
+                        total_validation_retries += 1
+                        hypothesis = None  
+                        continue
+                    else:
+                        break
+                else:
+                    break
             
-            # Record error if all attempts failed
+            query_parse_results.append(query_had_any_parse_success)
+            
             if not hypothesis and query_error:
                 errors.append(query_error)
             
             if hypothesis:
                 all_hypotheses.append(hypothesis)
                 
-                # Check uniqueness among ALL hypotheses (for novelty calculation)
                 all_h_hash = hypothesis.get_hash()
                 if all_h_hash not in all_unique_hashes:
                     all_unique_hashes.add(all_h_hash)
                     unique_all_graphs.append(hypothesis)
                 
-                # Validate hypothesis
                 is_valid = self.validate_hypothesis(hypothesis, observations)
                 
                 if is_valid:
                     valid_hypotheses.append(hypothesis)
                     
-                    # Check uniqueness among valid hypotheses
                     h_hash = hypothesis.get_hash()
                     if h_hash not in unique_hashes:
                         unique_hashes.add(h_hash)
                         unique_valid_graphs.append(hypothesis)
-        
-        # Calculate metrics
+
         valid_rate = len(valid_hypotheses) / n_queries if n_queries > 0 else 0
         novelty_rate = len(unique_all_graphs) / n_queries if n_queries > 0 else 0
-        parse_success_rate = parse_success_count / n_queries if n_queries > 0 else 0
         
-        # Check recovery against ground truths
+        parse_success_rate = sum(query_parse_results) / len(query_parse_results) if query_parse_results else 0
+
         recovered_gts = set()
         for graph in unique_valid_graphs:
             if graph.get_hash() in gt_hashes:
@@ -474,7 +642,7 @@ class CausalBenchmarkEnhanced:
         
         recovery_rate = len(recovered_gts) / len(gt_hashes) if gt_hashes else 0
         
-        return {
+        result = {
             'observation_set_id': observation_set.get('observation_set_id', 'unknown'),
             'n_observations': len(observations),
             'n_ground_truths': len(ground_truth_graphs),
@@ -483,11 +651,11 @@ class CausalBenchmarkEnhanced:
             'n_unique_valid': len(unique_valid_graphs),
             'n_unique_all': len(unique_all_graphs),
             'n_recovered_gts': len(recovered_gts),
-            'parse_success_count': parse_success_count,
             'parse_success_rate': parse_success_rate,
             'valid_rate': valid_rate,
             'novelty_rate': novelty_rate,
             'recovery_rate': recovery_rate,
+            'validation_retries': total_validation_retries,
             'token_usage': {
                 'prompt_tokens': total_prompt_tokens,
                 'completion_tokens': total_completion_tokens,
@@ -503,6 +671,11 @@ class CausalBenchmarkEnhanced:
             'valid_hypotheses': [h.to_dict() for h in valid_hypotheses],
             'unique_graphs': [g.to_dict() for g in unique_valid_graphs]
         }
+        
+        if hasattr(llm, 'temperature'):
+            llm.temperature = original_temp
+        
+        return result
     
     def run_benchmark(
         self,
@@ -531,17 +704,16 @@ class CausalBenchmarkEnhanced:
         Returns:
             Dictionary with complete benchmark results including statistics, token usage, and costs
         """
-        # Create checkpoint directory
         checkpoint_path = Path(checkpoint_dir)
         checkpoint_path.mkdir(parents=True, exist_ok=True)
         
-        # Generate run ID and checkpoint file
         run_id = datetime.now().strftime("%Y%m%d_%H%M%S")
         safe_llm_name = llm.get_name().replace('/', '_').replace('(', '_').replace(')', '_').replace(' ', '_')
         checkpoint_file = checkpoint_path / f"checkpoint_causal_enhanced_{safe_llm_name}_{run_id}.json"
         
         print(f"\nRunning Enhanced Causal Benchmark")
         print(f"LLM: {llm.get_name()}")
+        print(f"Prompting Mode: {'Chain-of-Thought (CoT)' if self.use_cot else 'Standard'}")
         print(f"Sampling {n_samples} observation sets")
         if n_queries_per_sample is not None:
             print(f"Queries per sample: {n_queries_per_sample} (fixed)")
@@ -551,27 +723,24 @@ class CausalBenchmarkEnhanced:
         print(f"Checkpoint file: {checkpoint_file}")
         print("-" * 50)
         
-        # Sample observation sets
         sampled_sets = self.sample_observation_sets(n_samples, seed)
         
-        # Initialize results tracking
         all_results = []
         valid_rates = []
         novelty_rates = []
         recovery_rates = []
         parse_success_rates = []
         
-        # Token and cost tracking
         total_prompt_tokens = 0
         total_completion_tokens = 0
         total_tokens = 0
         total_cost = 0.0
         
-        # Error tracking
         all_errors = []
         total_error_counts = {}
         
-        # Load existing checkpoint if it exists
+        total_validation_retries_all = 0
+        
         start_idx = 0
         if checkpoint_file.exists():
             try:
@@ -580,19 +749,16 @@ class CausalBenchmarkEnhanced:
                     all_results = checkpoint_data.get('results', [])
                     start_idx = len(all_results)
                     
-                    # Restore token/cost data
                     total_prompt_tokens = checkpoint_data.get('total_prompt_tokens', 0)
                     total_completion_tokens = checkpoint_data.get('total_completion_tokens', 0)
                     total_tokens = checkpoint_data.get('total_tokens', 0)
                     total_cost = checkpoint_data.get('total_cost', 0.0)
                     
-                    # Restore error data
                     all_errors = checkpoint_data.get('all_errors', [])
                     total_error_counts = checkpoint_data.get('total_error_counts', {})
                     
                     print(f"Resuming from checkpoint: {start_idx}/{n_samples} completed")
                     
-                    # Recalculate rates from checkpoint
                     for result in all_results:
                         valid_rates.append(result['valid_rate'])
                         novelty_rates.append(result['novelty_rate'])
@@ -602,7 +768,6 @@ class CausalBenchmarkEnhanced:
                 print(f"Warning: Failed to load checkpoint: {e}")
                 print("Starting from beginning...")
         
-        # Process each sampled observation set
         for idx in range(start_idx, len(sampled_sets)):
             obs_set = sampled_sets[idx]
             
@@ -613,7 +778,6 @@ class CausalBenchmarkEnhanced:
                 print(f"  Number of ground truths: {obs_set['n_compatible_graphs']}")
             
             try:
-                # Determine number of queries
                 if n_queries_per_sample is not None:
                     n_queries = n_queries_per_sample
                 else:
@@ -622,7 +786,6 @@ class CausalBenchmarkEnhanced:
                     if verbose:
                         print(f"  Using {n_queries} queries ({query_multiplier}x {n_gt} ground truths)")
                 
-                # Evaluate
                 result = self.evaluate_single_observation_set(
                     llm, obs_set, n_queries, verbose=False, max_retries=max_retries
                 )
@@ -632,8 +795,7 @@ class CausalBenchmarkEnhanced:
                 novelty_rates.append(result['novelty_rate'])
                 recovery_rates.append(result['recovery_rate'])
                 parse_success_rates.append(result['parse_success_rate'])
-                
-                # Aggregate token usage and costs
+
                 if 'token_usage' in result:
                     total_prompt_tokens += result['token_usage']['prompt_tokens']
                     total_completion_tokens += result['token_usage']['completion_tokens']
@@ -641,10 +803,11 @@ class CausalBenchmarkEnhanced:
                 if 'cost' in result:
                     total_cost += result['cost']
                 
-                # Aggregate errors
+                if 'validation_retries' in result:
+                    total_validation_retries_all += result['validation_retries']
+                
                 if 'errors' in result and result['errors']:
                     all_errors.extend(result['errors'])
-                    # Update error type counts
                     if 'error_summary' in result:
                         for error_type, count in result['error_summary']['error_types'].items():
                             total_error_counts[error_type] = total_error_counts.get(error_type, 0) + count
@@ -654,10 +817,11 @@ class CausalBenchmarkEnhanced:
                     print(f"  Valid rate: {result['valid_rate']:.2%}")
                     print(f"  Novelty rate: {result['novelty_rate']:.2%}")
                     print(f"  Recovery rate: {result['recovery_rate']:.2%}")
+                    if self.use_cot and result.get('validation_retries', 0) > 0:
+                        print(f"  Validation retries: {result['validation_retries']}")
                     if result['cost'] > 0:
                         print(f"  Cost: ${result['cost']:.6f}")
                 
-                # Save checkpoint
                 checkpoint_data = {
                     'run_id': run_id,
                     'llm_name': llm.get_name(),
@@ -683,7 +847,6 @@ class CausalBenchmarkEnhanced:
                 traceback.print_exc()
                 continue
         
-        # Calculate statistics
         def calculate_stats(rates):
             if not rates:
                 return {'mean': 0, 'std': 0, 'var': 0, 'min': 0, 'max': 0}
@@ -695,17 +858,16 @@ class CausalBenchmarkEnhanced:
                 'max': np.max(rates)
             }
         
-        # Calculate p-values (one-sample t-test against null hypothesis of 0)
         def calculate_p_value(rates):
             if not rates or len(rates) < 2:
                 return None
             t_stat, p_val = stats.ttest_1samp(rates, 0)
             return p_val
         
-        # Compile final results
         final_results = {
             'run_id': run_id,
             'llm_name': llm.get_name(),
+            'prompting_mode': 'cot' if self.use_cot else 'standard',
             'n_samples': len(all_results),
             'n_queries_per_sample': n_queries_per_sample,
             'query_multiplier': query_multiplier if n_queries_per_sample is None else None,
@@ -748,10 +910,13 @@ class CausalBenchmarkEnhanced:
                 'error_types': total_error_counts,
                 'error_rate': len(all_errors) / (len(all_results) * (n_queries_per_sample or 1)) if all_results else 0
             },
+            'validation_summary': {
+                'total_validation_retries': total_validation_retries_all,
+                'avg_retries_per_sample': total_validation_retries_all / len(all_results) if all_results else 0
+            },
             'per_sample_results': all_results
         }
         
-        # Print comprehensive summary
         print("\n" + "=" * 60)
         print("ENHANCED BENCHMARK RESULTS SUMMARY")
         print("=" * 60)
@@ -782,6 +947,11 @@ class CausalBenchmarkEnhanced:
         print(f"  Avg cost/sample: ${final_results['cost']['avg_cost_per_sample']:.4f}")
         print(f"  Avg cost/query: ${final_results['cost']['avg_cost_per_query']:.6f}")
         
+        if self.use_cot and total_validation_retries_all > 0:
+            print(f"\nValidation Retries (CoT mode):")
+            print(f"  Total retries: {total_validation_retries_all}")
+            print(f"  Avg retries/sample: {final_results['validation_summary']['avg_retries_per_sample']:.2f}")
+        
         if all_errors:
             print(f"\nErrors:")
             print(f"  Total errors: {len(all_errors)}")
@@ -793,7 +963,6 @@ class CausalBenchmarkEnhanced:
         
         print("=" * 60)
         
-        # Clean up checkpoint file after successful completion
         if checkpoint_file.exists():
             try:
                 checkpoint_file.unlink()
@@ -863,15 +1032,12 @@ def parse_n_observations_filter(filter_str: str) -> List[int]:
     for part in parts:
         part = part.strip()
         if '-' in part and not part.startswith('-'):
-            # Range like "2-5"
             start, end = part.split('-')
             start, end = int(start.strip()), int(end.strip())
             result.extend(range(start, end + 1))
         else:
-            # Single value
             result.append(int(part))
     
-    # Remove duplicates and sort
     return sorted(list(set(result)))
 
 
@@ -888,7 +1054,6 @@ def parse_gt_filter(filter_str: str) -> Tuple[Optional[int], Optional[int]]:
     if not filter_str:
         return None, None
     
-    # Check if it's a range (single dash not at start)
     if '-' in filter_str and not filter_str.startswith('-'):
         parts = filter_str.split('-')
         if len(parts) == 2:
@@ -899,7 +1064,6 @@ def parse_gt_filter(filter_str: str) -> Tuple[Optional[int], Optional[int]]:
             except ValueError:
                 pass
     
-    # Otherwise, treat as comma-separated list
     try:
         values = []
         for part in filter_str.split(','):
@@ -942,14 +1106,13 @@ def main():
     parser.add_argument("--output", default=None, help="Output file path")
     parser.add_argument("--verbose", action="store_true", default=True, help="Verbose output")
     parser.add_argument("--quiet", action="store_true", help="Disable verbose output")
+    parser.add_argument("--use-cot", action="store_true", help="Enable Chain-of-Thought prompting for improved reasoning")
     
     args = parser.parse_args()
-    
-    # Handle verbose/quiet flags
+
     if args.quiet:
         args.verbose = False
     
-    # Load configuration
     config = load_config(args.config)
     llm_type = config.get('llm', {}).get('type', 'openrouter')
     
@@ -980,7 +1143,6 @@ def main():
         print(f"Error: Dataset file not found: {args.dataset}")
         sys.exit(1)
     
-    # Generate output filename if not specified
     if args.output is None:
         dataset_name = Path(args.dataset).stem
         model_name = Path(model).stem if model else llm_type
@@ -989,7 +1151,6 @@ def main():
     else:
         output = args.output
     
-    # Parse filters if provided
     n_observations_filter = None
     if args.n_observations_filter:
         n_observations_filter = parse_n_observations_filter(args.n_observations_filter)
@@ -1004,12 +1165,11 @@ def main():
             else:
                 print(f"Filtering for n_compatible_graphs: {gt_filter[0]}")
     
-    # Initialize benchmark with filters
     benchmark = CausalBenchmarkEnhanced(args.dataset, 
                                        n_observations_filter=n_observations_filter,
-                                       gt_filter=gt_filter)
+                                       gt_filter=gt_filter,
+                                       use_cot=args.use_cot)
     
-    # Print configuration
     print("\n" + "=" * 60)
     print("ENHANCED CAUSAL BENCHMARK CONFIGURATION")
     print("=" * 60)
@@ -1017,6 +1177,7 @@ def main():
     print(f"LLM Type: {llm_type}")
     print(f"Model: {model}")
     print(f"Temperature: {temperature}")
+    print(f"Prompting Mode: {'Chain-of-Thought (CoT)' if args.use_cot else 'Standard'}")
     print(f"Samples: {args.n_samples}")
     
     if args.n_queries is not None:
@@ -1030,7 +1191,6 @@ def main():
     print(f"Output: {output}")
     print("=" * 60)
     
-    # Set up LLM
     llm = setup_llm(
         llm_type,
         model=model,
@@ -1038,7 +1198,6 @@ def main():
         temperature=temperature
     )
     
-    # Run benchmark
     results = benchmark.run_benchmark(
         llm=llm,
         n_samples=args.n_samples,

@@ -1,12 +1,13 @@
 {
-  "run_id": "20251025_161855",
+  "run_id": "20251028_174227",
   "llm_name": "OpenRouter(qwen/qwen-2.5-72b-instruct)",
-  "n_samples": 30,
+  "prompting_mode": "standard",
+  "n_samples": 15,
   "n_queries_per_sample": null,
   "query_multiplier": 1.0,
   "query_mode": "adaptive_1.0x",
   "seed": 33550336,
-  "timestamp": "2025-10-25T16:20:44.159885",
+  "timestamp": "2025-10-28T17:43:38.639328",
   "max_edges_constraint": 3,
   "statistics": {
     "parse_success_rate": {
@@ -18,41 +19,41 @@
       "p_value": 0.0
     },
     "valid_rate": {
-      "mean": 0.6044444444444445,
-      "std": 0.38243695518524096,
-      "var": 0.146258024691358,
+      "mean": 0.49999999999999994,
+      "std": 0.40253824294970664,
+      "var": 0.16203703703703703,
       "min": 0.0,
       "max": 1.0,
-      "p_value": 2.234953886375642e-09
+      "p_value": 0.0003768099937525166
     },
     "novelty_rate": {
-      "mean": 0.8972222222222221,
-      "std": 0.24217698354307884,
-      "var": 0.05864969135802468,
+      "mean": 0.8922222222222224,
+      "std": 0.25245950659291044,
+      "var": 0.06373580246913578,
       "min": 0.08333333333333333,
       "max": 1.0,
-      "p_value": 1.754505607324958e-18
+      "p_value": 2.664509150203408e-09
     },
     "recovery_rate": {
-      "mean": 0.5405555555555556,
-      "std": 0.383953202523947,
-      "var": 0.14742006172839506,
+      "mean": 0.4255555555555555,
+      "std": 0.37514770753549304,
+      "var": 0.14073580246913583,
       "min": 0.0,
       "max": 1.0,
-      "p_value": 2.335179727293448e-08
+      "p_value": 0.0008169447576880698
     }
   },
   "token_usage": {
-    "prompt_tokens": 26427,
-    "completion_tokens": 762,
-    "total_tokens": 27189,
-    "avg_tokens_per_sample": 906.3,
-    "avg_tokens_per_query": 906.3
+    "prompt_tokens": 13921,
+    "completion_tokens": 418,
+    "total_tokens": 14339,
+    "avg_tokens_per_sample": 955.9333333333333,
+    "avg_tokens_per_query": 955.9333333333333
   },
   "cost": {
-    "total_cost": 0.027189000000000005,
-    "avg_cost_per_sample": 0.0009063000000000002,
-    "avg_cost_per_query": 0.0009063000000000002
+    "total_cost": 0.014339000000000001,
+    "avg_cost_per_sample": 0.0009559333333333334,
+    "avg_cost_per_query": 0.0009559333333333334
   },
   "error_summary": {
     "total_errors": 0,
@@ -99,7 +100,7 @@
             ],
             [
               "C",
-              "A"
+              "B"
             ]
           ]
         }
@@ -908,15 +909,15 @@
       "n_observations": 3,
       "n_ground_truths": 2,
       "n_queries": 2,
-      "n_valid": 1,
-      "n_unique_valid": 1,
+      "n_valid": 0,
+      "n_unique_valid": 0,
       "n_unique_all": 2,
-      "n_recovered_gts": 1,
+      "n_recovered_gts": 0,
       "parse_success_count": 2,
       "parse_success_rate": 1.0,
-      "valid_rate": 0.5,
+      "valid_rate": 0.0,
       "novelty_rate": 1.0,
-      "recovery_rate": 0.5,
+      "recovery_rate": 0.0,
       "token_usage": {
         "prompt_tokens": 614,
         "completion_tokens": 24,
@@ -959,61 +960,17 @@
             ],
             [
               "B",
-              "A"
+              "C"
             ],
             [
-              "B",
-              "C"
+              "A",
+              "B"
             ]
           ]
         }
       ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "A"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "A"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ]
+      "valid_hypotheses": [],
+      "unique_graphs": []
     },
     {
       "observation_set_id": "n1_005",
@@ -1369,15 +1326,15 @@
           ],
           "edges": [
             [
-              "A",
-              "B"
-            ],
-            [
               "C",
               "A"
             ],
             [
               "C",
+              "B"
+            ],
+            [
+              "A",
               "B"
             ]
           ]
@@ -1507,8 +1464,8 @@
               "A"
             ],
             [
-              "C",
-              "B"
+              "B",
+              "A"
             ]
           ]
         },
@@ -1524,8 +1481,8 @@
               "A"
             ],
             [
-              "B",
-              "C"
+              "C",
+              "B"
             ]
           ]
         }
@@ -1557,7 +1514,7 @@
             ],
             [
               "B",
-              "C"
+              "A"
             ]
           ]
         }
@@ -1589,7 +1546,7 @@
             ],
             [
               "B",
-              "C"
+              "A"
             ]
           ]
         }
@@ -1600,14 +1557,14 @@
       "n_observations": 1,
       "n_ground_truths": 5,
       "n_queries": 5,
-      "n_valid": 4,
+      "n_valid": 5,
       "n_unique_valid": 4,
-      "n_unique_all": 5,
+      "n_unique_all": 4,
       "n_recovered_gts": 4,
       "parse_success_count": 5,
       "parse_success_rate": 1.0,
-      "valid_rate": 0.8,
-      "novelty_rate": 1.0,
+      "valid_rate": 1.0,
+      "novelty_rate": 0.8,
       "recovery_rate": 0.8,
       "token_usage": {
         "prompt_tokens": 1447,
@@ -1684,8 +1641,8 @@
               "C"
             ],
             [
-              "B",
-              "C"
+              "A",
+              "B"
             ]
           ]
         },
@@ -1698,15 +1655,15 @@
           "edges": [
             [
               "A",
+              "C"
+            ],
+            [
+              "C",
               "B"
             ],
             [
               "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
+              "B"
             ]
           ]
         }
@@ -1772,15 +1729,32 @@
           "edges": [
             [
               "A",
-              "B"
+              "C"
             ],
+            [
+              "A",
+              "B"
+            ]
+          ]
+        },
+        {
+          "nodes": [
+            "A",
+            "B",
+            "C"
+          ],
+          "edges": [
             [
               "A",
               "C"
             ],
             [
-              "B",
-              "C"
+              "C",
+              "B"
+            ],
+            [
+              "A",
+              "B"
             ]
           ]
         }
@@ -1846,1675 +1820,15 @@
           "edges": [
             [
               "A",
-              "B"
-            ],
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n3_003",
-      "n_observations": 3,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 303,
-        "completion_tokens": 6,
-        "total_tokens": 309
-      },
-      "cost": 0.000309,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_014",
-      "n_observations": 2,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 287,
-        "completion_tokens": 6,
-        "total_tokens": 293
-      },
-      "cost": 0.000293,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_010",
-      "n_observations": 2,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 287,
-        "completion_tokens": 10,
-        "total_tokens": 297
-      },
-      "cost": 0.000297,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_007",
-      "n_observations": 2,
-      "n_ground_truths": 4,
-      "n_queries": 4,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 2,
-      "n_recovered_gts": 1,
-      "parse_success_count": 4,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.25,
-      "novelty_rate": 0.5,
-      "recovery_rate": 0.25,
-      "token_usage": {
-        "prompt_tokens": 1190,
-        "completion_tokens": 36,
-        "total_tokens": 1226
-      },
-      "cost": 0.001226,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "A",
-              "B"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "A",
-              "B"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n1_003",
-      "n_observations": 1,
-      "n_ground_truths": 4,
-      "n_queries": 4,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 4,
-      "n_recovered_gts": 1,
-      "parse_success_count": 4,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.25,
-      "novelty_rate": 1.0,
-      "recovery_rate": 0.25,
-      "token_usage": {
-        "prompt_tokens": 1126,
-        "completion_tokens": 40,
-        "total_tokens": 1166
-      },
-      "cost": 0.001166,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "A",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n3_008",
-      "n_observations": 3,
-      "n_ground_truths": 2,
-      "n_queries": 2,
-      "n_valid": 0,
-      "n_unique_valid": 0,
-      "n_unique_all": 2,
-      "n_recovered_gts": 0,
-      "parse_success_count": 2,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 0.0,
-      "token_usage": {
-        "prompt_tokens": 614,
-        "completion_tokens": 20,
-        "total_tokens": 634
-      },
-      "cost": 0.000634,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "C",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [],
-      "unique_graphs": []
-    },
-    {
-      "observation_set_id": "n2_027",
-      "n_observations": 2,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 0,
-      "n_unique_valid": 0,
-      "n_unique_all": 1,
-      "n_recovered_gts": 0,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 0.0,
-      "token_usage": {
-        "prompt_tokens": 287,
-        "completion_tokens": 10,
-        "total_tokens": 297
-      },
-      "cost": 0.000297,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [],
-      "unique_graphs": []
-    },
-    {
-      "observation_set_id": "n1_007",
-      "n_observations": 1,
-      "n_ground_truths": 4,
-      "n_queries": 4,
-      "n_valid": 2,
-      "n_unique_valid": 2,
-      "n_unique_all": 4,
-      "n_recovered_gts": 2,
-      "parse_success_count": 4,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.5,
-      "novelty_rate": 1.0,
-      "recovery_rate": 0.5,
-      "token_usage": {
-        "prompt_tokens": 1126,
-        "completion_tokens": 36,
-        "total_tokens": 1162
-      },
-      "cost": 0.001162,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ],
-            [
-              "A",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ],
-            [
-              "C",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ],
-            [
-              "C",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ],
-            [
-              "C",
-              "B"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n1_009",
-      "n_observations": 1,
-      "n_ground_truths": 12,
-      "n_queries": 12,
-      "n_valid": 7,
-      "n_unique_valid": 4,
-      "n_unique_all": 7,
-      "n_recovered_gts": 4,
-      "parse_success_count": 12,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.5833333333333334,
-      "novelty_rate": 0.5833333333333334,
-      "recovery_rate": 0.3333333333333333,
-      "token_usage": {
-        "prompt_tokens": 3760,
-        "completion_tokens": 100,
-        "total_tokens": 3860
-      },
-      "cost": 0.0038599999999999997,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "C",
-              "B"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "C",
-              "B"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "B"
-            ],
-            [
-              "B",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "A"
-            ],
-            [
-              "A",
-              "B"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "C",
-              "B"
-            ],
-            [
-              "B",
-              "A"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "B"
-            ],
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ],
-            [
-              "B",
-              "A"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_021",
-      "n_observations": 2,
-      "n_ground_truths": 4,
-      "n_queries": 4,
-      "n_valid": 4,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 4,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 0.25,
-      "recovery_rate": 0.25,
-      "token_usage": {
-        "prompt_tokens": 1172,
-        "completion_tokens": 20,
-        "total_tokens": 1192
-      },
-      "cost": 0.001192,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": []
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_025",
-      "n_observations": 2,
-      "n_ground_truths": 4,
-      "n_queries": 4,
-      "n_valid": 3,
-      "n_unique_valid": 3,
-      "n_unique_all": 4,
-      "n_recovered_gts": 3,
-      "parse_success_count": 4,
-      "parse_success_rate": 1.0,
-      "valid_rate": 0.75,
-      "novelty_rate": 1.0,
-      "recovery_rate": 0.75,
-      "token_usage": {
-        "prompt_tokens": 1190,
-        "completion_tokens": 36,
-        "total_tokens": 1226
-      },
-      "cost": 0.001226,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
               "C"
             ],
             [
               "C",
-              "A"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ],
-            [
-              "A",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
+              "B"
             ],
             [
               "A",
               "B"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ],
-            [
-              "A",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ],
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ],
-            [
-              "A",
-              "C"
-            ]
-          ]
-        },
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ],
-            [
-              "A",
-              "B"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_009",
-      "n_observations": 2,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 287,
-        "completion_tokens": 6,
-        "total_tokens": 293
-      },
-      "cost": 0.000293,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n3_011",
-      "n_observations": 3,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 303,
-        "completion_tokens": 6,
-        "total_tokens": 309
-      },
-      "cost": 0.000309,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "A",
-              "C"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_026",
-      "n_observations": 2,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 287,
-        "completion_tokens": 6,
-        "total_tokens": 293
-      },
-      "cost": 0.000293,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "A"
-            ]
-          ]
-        }
-      ]
-    },
-    {
-      "observation_set_id": "n2_002",
-      "n_observations": 2,
-      "n_ground_truths": 1,
-      "n_queries": 1,
-      "n_valid": 1,
-      "n_unique_valid": 1,
-      "n_unique_all": 1,
-      "n_recovered_gts": 1,
-      "parse_success_count": 1,
-      "parse_success_rate": 1.0,
-      "valid_rate": 1.0,
-      "novelty_rate": 1.0,
-      "recovery_rate": 1.0,
-      "token_usage": {
-        "prompt_tokens": 287,
-        "completion_tokens": 6,
-        "total_tokens": 293
-      },
-      "cost": 0.000293,
-      "errors": [],
-      "error_summary": {
-        "total_errors": 0,
-        "error_types": {}
-      },
-      "all_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "valid_hypotheses": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
-            ]
-          ]
-        }
-      ],
-      "unique_graphs": [
-        {
-          "nodes": [
-            "A",
-            "B",
-            "C"
-          ],
-          "edges": [
-            [
-              "B",
-              "C"
             ]
           ]
         }
